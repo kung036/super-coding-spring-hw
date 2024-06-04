@@ -5,6 +5,8 @@ import com.github.supercodingspring.repository.airlineTicket.AirlineTicketAndFli
 import com.github.supercodingspring.repository.airlineTicket.AirlineTicketRepository;
 import com.github.supercodingspring.repository.passenger.Passenger;
 import com.github.supercodingspring.repository.passenger.PassengerReposiotry;
+import com.github.supercodingspring.repository.payment.Payment;
+import com.github.supercodingspring.repository.payment.PaymentRepository;
 import com.github.supercodingspring.repository.reservations.Reservation;
 import com.github.supercodingspring.repository.reservations.ReservationRepository;
 import com.github.supercodingspring.repository.users.UserEntity;
@@ -12,13 +14,16 @@ import com.github.supercodingspring.repository.users.UserRepository;
 import com.github.supercodingspring.web.dto.airline.ReservationRequest;
 import com.github.supercodingspring.web.dto.airline.ReservationResult;
 import com.github.supercodingspring.web.dto.airline.Ticket;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class AirReservationService {
 
     private UserRepository userRepository;
@@ -27,12 +32,7 @@ public class AirReservationService {
     private PassengerReposiotry passengerReposiotry;
     private ReservationRepository reservationRepository;
 
-    public AirReservationService(UserRepository userRepository, AirlineTicketRepository airlineTicketRepository, PassengerReposiotry passengerReposiotry, ReservationRepository reservationRepository) {
-        this.userRepository = userRepository;
-        this.airlineTicketRepository = airlineTicketRepository;
-        this.passengerReposiotry = passengerReposiotry;
-        this.reservationRepository = reservationRepository;
-    }
+    private PaymentRepository paymentRepository;
 
     public List<Ticket> findUserFavoritePlaceTickets(Integer userId, String ticketType) {
         // 1. 유저를 userId 로 가져와서, 선호하는 여행지 도출
@@ -65,7 +65,7 @@ public class AirReservationService {
                 = airlineTicketRepository.findAllAirLineTicketAndFlightInfo(airlineTicketId);
 
         // 3. reservation 생성
-        Reservation reservation = new Reservation(passengerId, airlineTicketId);
+        Reservation reservation = new Reservation(passengerId, airlineTicketId, rs.getInt("airline_ticket_id"), rs.getTimestamp("reserve_at").toLocalDateTime());
         Boolean isSuccess = reservationRepository.saveReservation(reservation);
 
         // TODO: ReservationResult DTO 만들기
@@ -75,5 +75,35 @@ public class AirReservationService {
         Integer totalPrice = airlineTicketAndFlightInfos.stream().map(AirlineTicketAndFlightInfo::getTotalPrice).findFirst().get();
 
         return new ReservationResult(prices, charges, tax, totalPrice, isSuccess);
+    }
+
+    @Transactional(transactionManager = "tm2")
+    public int makePayment(List<Integer> user_ids, List<Integer> reservation_ids) {
+        List<Passenger> passengers = new ArrayList<>();
+        user_ids.forEach(userId -> {
+            Passenger passenger = passengerReposiotry.findPassengerByUserId(userId);
+            passengers.add(passenger);
+        });
+
+        List<Reservation> reservations = new ArrayList<>();
+        reservation_ids.forEach(reservationId -> {
+            Reservation reservation = reservationRepository.findReservationById(reservationId);
+            reservations.add(reservation);
+        });
+
+        // TODO. 결제가 진행된 예약은 기존 “대기” 상태에서 “확정” 상태로 바뀌어야합니다.
+
+        for(int i=0; i<passengers.size(); i++) {
+            Passenger passenger = passengers.get(i);
+            Reservation reservation = reservations.get(i);
+            Payment payment = Payment.builder()
+                    .reserve_at(reservation.getReserveAt())
+                    .passenger(passenger)
+                    .reservation(reservation)
+                    .build();
+            paymentRepository.save(payment);
+        }
+
+        return reservation_ids.size();
     }
 }

@@ -11,12 +11,13 @@ import javax.sql.DataSource;
 
 @Configuration
 public class JdbcConfig {
+    private static final String DB_PW = System.getenv("DB_PW");
 
     @Bean
     public DataSource dataSource1(){
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setUsername("root");
-        dataSource.setPassword("12341234");
+        dataSource.setPassword(DB_PW);
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
         dataSource.setUrl("jdbc:mysql://localhost:3306/chapter_96?useUnicode=true&characterEncoding=UTF-8");
         return dataSource;
@@ -26,7 +27,7 @@ public class JdbcConfig {
     public DataSource dataSource2(){
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setUsername("root");
-        dataSource.setPassword("12341234");
+        dataSource.setPassword(DB_PW);
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
         dataSource.setUrl("jdbc:mysql://localhost:3306/chapter_97?useUnicode=true&characterEncoding=UTF-8");
         return dataSource;

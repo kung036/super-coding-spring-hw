@@ -9,7 +9,7 @@ public class Reservation {
     private String reservationStatus;
     private LocalDateTime reserveAt;
 
-    public Reservation(Integer passengerId, Integer airlineTicketId) {
+    public Reservation(Integer passengerId, Integer airlineTicketId, int airline_ticket_id, LocalDateTime reserveAt) {
         this.passengerId = passengerId;
         this.airlineTicketId = airlineTicketId;
         this.reservationStatus = "대기";
