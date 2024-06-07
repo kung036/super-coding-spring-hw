@@ -1,18 +1,18 @@
 package com.github.supercodingspring.web.controller;
 
 import com.github.supercodingspring.service.AirReservationService;
-import com.github.supercodingspring.web.dto.airline.ReservationRequest;
-import com.github.supercodingspring.web.dto.airline.ReservationResult;
-import com.github.supercodingspring.web.dto.airline.Ticket;
-import com.github.supercodingspring.web.dto.airline.TicketResponse;
+import com.github.supercodingspring.web.dto.airline.*;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/v1/api/air-reservation")
@@ -46,5 +46,15 @@ public class AirReservationController {
     {
         Double sum = airReservationService.findUserFlightSumPrice(userId);
         return sum;
+    }
+
+    @GetMapping("/flight-pageable")
+    public Page<FlightDto> findFlightWithTicketType(@RequestParam("type") String ticketType, Pageable pageable){
+        return airReservationService.findFlightsWithTypeAndPageable(ticketType, pageable);
+    }
+
+    @GetMapping("/username-arrival-location")
+    public Set<String> findUser(@RequestParam("username") String userName) {
+        return airReservationService.findFlightArrivalLocation(userName);
     }
 }
